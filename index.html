@@ -225,6 +225,8 @@
       font-weight: 700;
       margin-bottom: 18px;
       color: var(--ink);
+      overflow: visible;
+      line-height: 1.4;
     }
     figcaption {
       margin-top: 14px;
@@ -457,7 +459,14 @@
   <p class="reveal">Battery degradation is the EV's Achilles heel for long-term ownership. Frequent DC fast-charging at high power degrades battery capacity roughly <strong>twice as fast</strong> as home slow-charging.</p>
 
   <div class="chart-card reveal">
-    <div class="chart-label">Figure 7 &middot; Bar Chart</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div class="chart-label" style="margin-bottom:0">Figure 7 &middot; Bar Chart</div>
+      <div style="display:flex;gap:12px;font-size:0.7rem;font-family:'IBM Plex Mono',monospace;letter-spacing:0.06em;color:var(--ink-dim);">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#1d7a4a;display:inline-block;flex-shrink:0;"></span>&#x2265;85% Good</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#d97706;display:inline-block;flex-shrink:0;"></span>80&#x2013;84%</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#c0392b;display:inline-block;flex-shrink:0;"></span>&lt;80% Degraded</span>
+      </div>
+    </div>
     <div class="chart-title">Battery Capacity Remaining After 8 Years by Charging Profile (%)</div>
     <canvas id="chart7" height="260"></canvas>
     <figcaption>8-year remaining capacity by charging behavior, derived from 45,700 real-world vehicles. Low DCFC use retains 88%; frequent high-power fast charging degrades to 76%. Source: battery_degradation.csv.</figcaption>
@@ -644,7 +653,7 @@ new Chart('chart7', {
     }]
   },
   options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.raw+'%'}}},
-    scales:{y:{min:65,max:100,ticks:{callback:v=>v+'%'},grid:{color:GRID}},x:{grid:{display:false}}}}
+    scales:{y:{min:65,max:100,ticks:{callback:v=>v+'%'},grid:{color:GRID}},x:{grid:{display:false},ticks:{maxRotation:35,minRotation:35}}}}
 });
 
 const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.12});
