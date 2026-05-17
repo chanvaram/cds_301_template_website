@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -206,7 +207,7 @@
       background: var(--white);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 28px 24px 32px;
+      padding: 28px 24px 18px;
       margin: 32px 0;
       box-shadow: 0 2px 14px rgba(0,0,0,0.05);
     }
@@ -319,7 +320,7 @@
   <div class="chart-card reveal">
     <div class="chart-label">Figure 1 &middot; Bar Chart</div>
     <div class="chart-title">Purchase Price: EV vs. Gas vs. Hybrid (USD, before subsidies)</div>
-    <img src="./static/images/chart1.png" alt="Purchase Price: EV vs. Gas vs. Hybrid" style="width:100%;height:auto;border-radius:6px;">
+    <canvas id="chart1" height="260"></canvas>
     <figcaption>Average transaction prices for four vehicle segments. EV premium ranges from ~$8,000 (Compact SUV) to ~$15,000 (Pickup) over equivalent gas vehicles. Source: vehicle_comparison.csv.</figcaption>
   </div>
 
@@ -337,7 +338,7 @@
   <div class="chart-card reveal">
     <div class="chart-label">Figure 2 &middot; Bar Chart</div>
     <div class="chart-title">Net Purchase Price After Maximum Incentive (USD)</div>
-    <img src="./static/images/chart2.png" alt="Net Purchase Price After Maximum Incentive" style="width:100%;height:auto;border-radius:6px;">
+    <canvas id="chart2" height="240"></canvas>
     <figcaption>EV net price after $7,500 federal tax credit. Compact SUV and Medium Sedan EVs reach near-parity with gas after subsidy. Source: vehicle_comparison.csv.</figcaption>
   </div>
 
@@ -355,7 +356,7 @@
   <div class="chart-card reveal">
     <div class="chart-label">Figure 3 &middot; Grouped Bar Chart</div>
     <div class="chart-title">Cost per 100 km: EV Charging vs. Gasoline by Country (USD, 2024)</div>
-    <img src="./static/images/chart3.png" alt="Cost per 100 km by Country" style="width:100%;height:auto;border-radius:6px;">
+    <canvas id="chart3" height="300"></canvas>
     <figcaption>EV cost assumes 15 kWh/100 km at local electricity tariffs. ICE cost assumes 8 L/100 km at local pump prices. Source: regional_costs.csv.</figcaption>
   </div>
 
@@ -384,7 +385,7 @@
   <div class="chart-card reveal">
     <div class="chart-label">Figure 4 &middot; Line Chart</div>
     <div class="chart-title">10-Year Cumulative Operating Cost: Tesla Model Y vs. RAV4 (USD)</div>
-    <img src="./static/images/chart4.png" alt="10-Year Cumulative Operating Cost" style="width:100%;height:auto;border-radius:6px;">
+    <canvas id="chart4" height="320"></canvas>
     <figcaption>Cumulative operating costs (depreciation + maintenance + insurance + fuel). Add $32,500 for EV and $32,000 for Gas at Year 0 for full TCO picture. Note the $8,000 battery spike at Year 8. Source: tco_timeline.json.</figcaption>
   </div>
 
@@ -406,7 +407,7 @@
   <div class="chart-card reveal">
     <div class="chart-label">Figure 5 &middot; Line Chart</div>
     <div class="chart-title">5-Year Total Operating Cost by Annual Mileage: EV vs. Gas vs. Hybrid (USD)</div>
-    <img src="./static/images/chart5.png" alt="5-Year Total Operating Cost by Annual Mileage" style="width:100%;height:auto;border-radius:6px;">
+    <canvas id="chart5" height="280"></canvas>
     <figcaption>5-year operating cost across six mileage scenarios. The crossover point — where EV becomes cheaper than gas — is around 10,000 miles/year. Source: mileage_sensitivity.csv.</figcaption>
   </div>
 
@@ -435,7 +436,7 @@
   <div class="chart-card reveal">
     <div class="chart-label">Figure 6 &middot; Line Chart</div>
     <div class="chart-title">5-Year TCO vs. Incentive Amount: EV vs. Gas Break-Even (USD)</div>
-    <img src="./static/images/chart6.png" alt="5-Year TCO vs. Incentive Amount" style="width:100%;height:auto;border-radius:6px;">
+    <canvas id="chart6" height="280"></canvas>
     <figcaption>EV and Gas 5-year TCO at five incentive levels. The $5,000 mark is the approximate tipping point where EV becomes cheaper than gas. Source: incentive_impact.csv.</figcaption>
   </div>
 
@@ -458,7 +459,7 @@
   <div class="chart-card reveal">
     <div class="chart-label">Figure 7 &middot; Bar Chart</div>
     <div class="chart-title">Battery Capacity Remaining After 8 Years by Charging Profile (%)</div>
-    <img src="./static/images/chart7.png" alt="Battery Capacity Remaining After 8 Years by Charging Profile" style="width:100%;height:auto;border-radius:6px;">
+    <canvas id="chart7" height="260"></canvas>
     <figcaption>8-year remaining capacity by charging behavior, derived from 45,700 real-world vehicles. Low DCFC use retains 88%; frequent high-power fast charging degrades to 76%. Source: battery_degradation.csv.</figcaption>
   </div>
 
@@ -537,6 +538,115 @@
 </footer>
 
 <script>
+const C_EV  = '#1d7a4a', C_GAS = '#c0392b', C_HYB = '#d97706';
+const C_EV_A  = 'rgba(29,122,74,0.12)', C_GAS_A = 'rgba(192,57,43,0.12)';
+const GRID = 'rgba(0,0,0,0.06)';
+Chart.defaults.font = { family: "'IBM Plex Sans', sans-serif", size: 12 };
+Chart.defaults.color = '#888888';
+
+new Chart('chart1', {
+  type:'bar',
+  data:{
+    labels:['Compact SUV','Medium Sedan','Medium SUV','Pickup'],
+    datasets:[
+      {label:'EV',     data:[40000,38000,55000,70000], backgroundColor:C_EV,  borderRadius:4},
+      {label:'Gas',    data:[32000,30000,45000,55000], backgroundColor:C_GAS, borderRadius:4},
+      {label:'Hybrid', data:[34000,32000,48000,58000], backgroundColor:C_HYB, borderRadius:4},
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>' $'+c.raw.toLocaleString()}}},
+    scales:{y:{ticks:{callback:v=>'$'+(v/1000)+'K'},grid:{color:GRID}},x:{grid:{display:false}}}}
+});
+
+new Chart('chart2', {
+  type:'bar',
+  data:{
+    labels:['Compact SUV','Medium Sedan','Medium SUV','Pickup'],
+    datasets:[
+      {label:'EV (after $7,500 credit)', data:[32500,30500,47500,62500], backgroundColor:C_EV,  borderRadius:4},
+      {label:'Gas',                      data:[32000,30000,45000,55000], backgroundColor:C_GAS, borderRadius:4},
+      {label:'Hybrid',                   data:[34000,32000,48000,58000], backgroundColor:C_HYB, borderRadius:4},
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>' $'+c.raw.toLocaleString()}}},
+    scales:{y:{min:25000,ticks:{callback:v=>'$'+(v/1000)+'K'},grid:{color:GRID}},x:{grid:{display:false}}}}
+});
+
+new Chart('chart3', {
+  type:'bar',
+  data:{
+    labels:['China','Norway','USA','Canada','France','Japan','UK','Australia','Italy','Germany'],
+    datasets:[
+      {label:'EV ($/100km)',  data:[1.5,1.95,2.25,1.8,3.45,3.75,4.65,4.2,5.4,6.0],   backgroundColor:C_EV,  borderRadius:4},
+      {label:'Gas ($/100km)', data:[8.8,16.8,7.6,10.4,15.2,11.6,14.8,12.8,16.0,15.6], backgroundColor:C_GAS, borderRadius:4},
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>' $'+c.raw.toFixed(2)}}},
+    scales:{y:{ticks:{callback:v=>'$'+v},grid:{color:GRID}},x:{grid:{display:false}}}}
+});
+
+new Chart('chart4', {
+  type:'line',
+  data:{
+    labels:['Yr 1','Yr 2','Yr 3','Yr 4','Yr 5','Yr 6','Yr 7','Yr 8','Yr 9','Yr 10'],
+    datasets:[
+      {label:'Tesla Model Y (EV)', data:[11108,21851,32231,42248,51900,61189,70114,86675,94872,102706],
+       borderColor:C_EV, backgroundColor:C_EV_A, fill:true, tension:0.3, pointRadius:4, borderWidth:2.5},
+      {label:'Toyota RAV4 (Gas)',  data:[8852,17602,26251,34797,43242,51585,59826,67966,76003,83939],
+       borderColor:C_GAS, backgroundColor:C_GAS_A, fill:true, tension:0.3, pointRadius:4, borderWidth:2.5},
+      {label:'RAV4 Hybrid', data:[8691,17220,25586,33789,41830,49708,57424,64978,72369,79598],
+       borderColor:C_HYB, backgroundColor:'rgba(217,119,6,0.07)', fill:true, tension:0.3, pointRadius:4, borderWidth:2, borderDash:[5,4]},
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>' $'+c.raw.toLocaleString()}}},
+    scales:{y:{ticks:{callback:v=>'$'+(v/1000).toFixed(0)+'K'},grid:{color:GRID}},x:{grid:{color:GRID}}}}
+});
+
+new Chart('chart5', {
+  type:'line',
+  data:{
+    labels:['5,000','10,000','15,000','20,000','25,000','30,000'],
+    datasets:[
+      {label:'EV 5-yr cost',     data:[34375,35500,36625,37750,38875,40000], borderColor:C_EV,  backgroundColor:'transparent', tension:0.3, pointRadius:5, borderWidth:2.5},
+      {label:'Gas 5-yr cost',    data:[32700,36400,40100,43800,47500,51200], borderColor:C_GAS, backgroundColor:'transparent', tension:0.3, pointRadius:5, borderWidth:2.5},
+      {label:'Hybrid 5-yr cost', data:[31750,34500,37250,40000,42750,45500], borderColor:C_HYB, backgroundColor:'transparent', tension:0.3, pointRadius:5, borderWidth:2, borderDash:[5,4]},
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>' $'+c.raw.toLocaleString()}}},
+    scales:{y:{ticks:{callback:v=>'$'+(v/1000).toFixed(0)+'K'},grid:{color:GRID}},
+      x:{title:{display:true,text:'Annual Miles Driven'},grid:{color:GRID}}}}
+});
+
+new Chart('chart6', {
+  type:'line',
+  data:{
+    labels:['$0','$2,500','$5,000','$7,500','$10,000'],
+    datasets:[
+      {label:'EV 5-yr TCO',         data:[40375,39125,37875,36625,35375], borderColor:C_EV,  backgroundColor:C_EV_A, fill:true, tension:0.3, pointRadius:5, borderWidth:2.5},
+      {label:'Gas 5-yr TCO (flat)', data:[38100,38100,38100,38100,38100], borderColor:C_GAS, backgroundColor:'transparent', borderDash:[6,4], tension:0, pointRadius:0, borderWidth:2},
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>' $'+c.raw.toLocaleString()}}},
+    scales:{y:{min:30000,ticks:{callback:v=>'$'+(v/1000).toFixed(0)+'K'},grid:{color:GRID}},
+      x:{title:{display:true,text:'Government Incentive Amount'},grid:{display:false}}}}
+});
+
+const cap = [88,84,76,78,82];
+new Chart('chart7', {
+  type:'bar',
+  data:{
+    labels:['Low DCFC (<12%)','High DCFC Low Pwr','High DCFC High Pwr','Hot Climate','Mild Climate'],
+    datasets:[{
+      label:'Capacity Remaining (%)',
+      data: cap,
+      backgroundColor: cap.map(v => v>=85?C_EV : v>=80?C_HYB : C_GAS),
+      borderRadius:5,
+    }]
+  },
+  options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.raw+'%'}}},
+    scales:{y:{min:65,max:100,ticks:{callback:v=>v+'%'},grid:{color:GRID}},x:{grid:{display:false}}}}
+});
+
 const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.12});
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 </script>
